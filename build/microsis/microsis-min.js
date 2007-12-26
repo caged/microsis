@@ -1,0 +1,1 @@
+var fook="wee";if(typeof MICROSIS=="undefined"||!MICROSIS){var MICROSIS={}}MICROSIS.namespace=function(){var A=$A(arguments),C=MICROSIS,B;A.each(function(D){B=D.split(".");B.without("MICROSIS").each(function(E){C[E]=C[E]||{};C=C[E]})});return C};(function(){MICROSIS.namespace("util","widget")})()
