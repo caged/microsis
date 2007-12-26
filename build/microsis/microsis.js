@@ -3,7 +3,7 @@
  * Licensed under BSD license
  * Version 0.1.0
  */
- var fook = "wee";
+
 /**
  * Microsis is largely based off of the principles of YUI widget development.
  * Some components are derived from and/or ported from YUI's on implementation.
