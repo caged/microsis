@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<title>Microsis Conventions</title>
+	<link rel="stylesheet" href="style/screen.css" type="text/css" media="screen" title="Conventions" charset="utf-8">
+</head>
+<body>
+<div id="content">
+  <h2>Microsis Visual Conventions</h2>
+
+<p>If you plan on contributing source or having your patches accepted to the project you'll
+need to follow a simple set of standards and conventions.</p>
+
+<h3>Basic style</h3>
+
+<p><img src="images/microsis-code-overview.png" class="screenshot" /></p>
+
+<ol>
+<li><strong>1. File headers:</strong> All files must be prepended with a header containing the copyright, 
+ license, and library version #.</li>
+<li><strong>2. Basic overview:</strong> A basic overview of what a class allows you to do.  Also setup 
+ the namespace for the class.</li>
+<li><strong>3. Class constructor:</strong> Document the class constructor above the <code>Class.create</code>, listing 
+ the parameters accepted by the <code>initialize</code> routine.</li>
+<li><strong>4. Proper spacing:</strong> A <code>Class.create</code> clause is immediately followed by a blank space.<br/>
+    If the class has an initializate method, this should come first in the class' methods 
+    and a space should come directly after this method.  Spaces should come directly 
+    after properties.</li>
+<li><strong>5. Column Wrap:</strong> The column wrap should be set at 86 and your code should be formatted 
+    in such a way that the first character of a word or instruction shouldn't break 
+    this line.</li>
+</ol>
+</div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+body {
+  margin: 0;
+  text-align: center;
+  padding: 20px;
+  font: normal 12px/1.5em Helvetica, "Lucida Grande", Helvetica, Arial, sans-serif;
+  background: #fff;
+  color: #333;
+}
+
+h3, h4 { font-family: serif; background-color:#5588DD; color:white;
+  padding:0.3em 0.6em }
+h2 { font-size:300%; letter-spacing:0.1em; margin-top:0 }
+pre { background:#000D27; padding:1em 1.2em; color:white; font-size:1.2em;
+  font-family: Monaco,Consolas,monospace }
+a { color:#FF6600; font-weight:bold }
+p code, h3 code { font-size:1.1em }
+p code { background:#e8e8e8; padding:0.1em 0.3em }
+
+#content {
+  width: 900px;
+  text-align: left;
+  padding: 20px;
+  background-color: #fff;
+  font-size: 120%;
+  margin: 0 auto;
+}
+
+.screenshot {
+  float: left;
+  margin: 5px 20px 5px 0;
+}
+
+ol {
+  margin: 20px 0;
+  list-style: none;
+}
+
+ol li {
+  margin-bottom: 8px;
+}

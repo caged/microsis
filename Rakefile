@@ -2,13 +2,14 @@ require 'rake'
 require 'rake/packagetask'
 require 'fileutils'
 require 'pathname'
-
 include FileUtils
 
 $:.unshift(File.expand_path(File.dirname(__FILE__)))
 %w(lib vendor).each do |d|
   $:.unshift(File.join(File.dirname(__FILE__)), d)
 end
+
+require 'doc_builder'
 
 YUI_COMPRESSOR_BIN = "java -jar vendor/yuicompressor/build/yuicompressor-2.2.4.jar --warn"
 JAVASCRIPT_SOURCE_FILES = Dir["src/**/*.js"]
@@ -34,15 +35,22 @@ namespace :microsis do
     end
   end
   
-  desc "Document all Microsis Javascript"
-  task :doc => :build do 
-    dir = File.expand_path(File.dirname(__FILE__))
-    rm Dir["docs/api/*"] 
-    vendor_dir = File.join(dir, 'vendor')
-    jsdoc_dir = File.expand_path(File.join(vendor_dir, 'jsdoc'))
+  namespace :doc do
+    desc "Document all Microsis Javascript"
+    task :api => :build do 
+      dir = File.expand_path(File.dirname(__FILE__))
+      rm Dir["docs/api/*"] 
+      vendor_dir = File.join(dir, 'vendor')
+      jsdoc_dir = File.expand_path(File.join(vendor_dir, 'jsdoc'))
     
-    command = "java -Djsdoc.dir=#{jsdoc_dir} -jar  #{jsdoc_dir}/app/js.jar #{jsdoc_dir}/app/run.js -t=#{File.join(dir, 'lib', 'templates', 'microsis')} -r=3 -d=#{File.join(dir, 'docs', 'api')} #{File.join(dir, 'src')}"
-    puts "RUNNING: #{command}"
-    puts  `#{command}`
+      command = "java -Djsdoc.dir=#{jsdoc_dir} -jar  #{jsdoc_dir}/app/js.jar #{jsdoc_dir}/app/run.js -t=#{File.join(dir, 'lib', 'templates', 'microsis')} -r=3 -d=#{File.join(dir, 'docs', 'api')} #{File.join(dir, 'src')}"
+      puts "RUNNING: #{command}"
+      puts  `#{command}`
+    end
+  
+    desc "Generate Convention documents from source files"
+    task :convention do
+      Microsis::DocBuilder.build_convention_docs
+    end
   end
 end
