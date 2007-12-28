@@ -37,11 +37,11 @@ namespace :microsis do
   desc "Document all Microsis Javascript"
   task :doc => :build do 
     dir = File.expand_path(File.dirname(__FILE__))
-    rm Dir["docs/*"] 
+    rm Dir["docs/api/*"] 
     vendor_dir = File.join(dir, 'vendor')
     jsdoc_dir = File.expand_path(File.join(vendor_dir, 'jsdoc'))
     
-    command = "java -Djsdoc.dir=#{jsdoc_dir} -jar  #{jsdoc_dir}/app/js.jar #{jsdoc_dir}/app/run.js -t=#{File.join(dir, 'lib', 'templates', 'microsis')} -r=3 -d=#{File.join(dir, 'docs')} #{File.join(dir, 'src')}"
+    command = "java -Djsdoc.dir=#{jsdoc_dir} -jar  #{jsdoc_dir}/app/js.jar #{jsdoc_dir}/app/run.js -t=#{File.join(dir, 'lib', 'templates', 'microsis')} -r=3 -d=#{File.join(dir, 'docs', 'api')} #{File.join(dir, 'src')}"
     puts "RUNNING: #{command}"
     puts  `#{command}`
   end
