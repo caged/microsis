@@ -50,4 +50,7 @@ MICROSIS.namespace = function() {
   
 (function() {
   MICROSIS.namespace('util', 'widget');
+  Object.isObject = function(o) {
+    return (o && (typeof o == "object" || Object.isFunction(o))) || false;
+  }
 })();

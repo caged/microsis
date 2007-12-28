@@ -1,0 +1,1 @@
+MICROSIS.util.DataSource=Class.create({initialize:function(A,B){},})
