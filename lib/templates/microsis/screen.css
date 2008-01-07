@@ -1,0 +1,102 @@
+body {
+  margin: 0;
+  text-align: center;
+  padding: 0;
+  font: normal 12px/1.5em "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: #dcecf1;
+  color: #3c3c3c;
+}
+
+ul, li, form, input, dt, dl, dd, ol, div, p, 
+blockquote, h1, h2, h3, h4, h5, h6, a, pre,
+code {
+  margin: 0;
+  padding: 0;
+}
+
+p {
+  margin-bottom: 8px;
+}
+
+a:hover {
+  color: #da3;
+}
+
+/* @group Structure */
+
+#container {
+  text-align: left;
+}
+
+#header {
+  padding: 18px;
+  text-align: left;
+  padding: 18px;
+  border-bottom: 3px solid #3d6572;
+  background-color: #fff;
+}
+
+#content {
+  width: 964px;
+  background: #fff;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  border-radius: 8px;
+  padding: 18px;
+  margin: 27px auto 27px auto;
+}
+
+#main {
+  float: left;
+  width: 600px;
+}
+
+#sbar {
+  margin-left: 618px;
+}
+
+/* @end */
+
+/* @group main */
+
+#overview {
+  font-weight: bold;
+  font-size: 120%;
+  line-height: 150%;
+  margin-bottom: 36px;
+  color: #444;
+}
+
+/* @end */
+
+/* @group Sidebar */
+
+.sblock {
+  margin-bottom: 36px;
+}
+
+.sblock h3 {
+  color: #222;
+}
+
+.sblock a:hover {
+  color: #000;
+}
+
+.icon-list li {
+  list-style: none;
+}
+
+.icon-list li a {
+  color: #258;
+  text-decoration: none;
+  display: block;
+  padding: 5px 0 5px 24px;
+  border-bottom: 1px solid #cee;
+}
+
+.module-list li a {
+  background: url(../images/module.png) 0 50% no-repeat;
+}
+
+/* @end */

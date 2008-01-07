@@ -9,19 +9,20 @@
   * moments within your code.  You can define events in one object and any number 
   * of different objects can subscribe to the event, including the object the event 
   * was created in.
- * @namespace MICROSIS.util
- */
+  * @namespace MICROSIS.util
+  */
  
 /**
- * @class CustomEvent
  * @constructor
  * @param {String} name   The name of the custom event that is passed to a subscribers 
  *                        callback.
  * @param {Object} scope  The context the custom event is invoked from.  Defaults to 
  *                        the window object.
  */
-MICROSIS.util.CustomEvent = Class.create({
-
+MICROSIS.util.CustomEvent = Class.create(
+  /** @scope MICROSIS.util.CustomEvent.prototype */
+  {
+  
   initialize: function(name, scope) {
     
     /**
@@ -35,14 +36,19 @@ MICROSIS.util.CustomEvent = Class.create({
      * The context in which the custom event is invoked from.  Defaults to the window
      * object.
      * @property scope
+     * @type object
      */
     this.scope = scope || window;
-    
     
     this.subscribers = [];
     this.lastError = null;
   },
   
+  /**
+   * Subscribe to a custom event
+   * @param method {Function} The callback method to be executed when the event is fired.
+   * @param obj {Object} The scope in which the callback should be executed.
+   */
   subscribe: function(method, obj) {
     if(!method) {
       throw new Error("Invalid callback for " + this.name);
@@ -50,9 +56,16 @@ MICROSIS.util.CustomEvent = Class.create({
     this.subscribers.push(new MICROSIS.util.Subscriber(method, obj));
   },
   
+  /**
+   * Remove a listener.  If a method isn't given, this will unsbuscribe all 
+   * subscribers.
+   * @param method {Function}  The method to remove subscribtions from.
+   * @param obj {Object}  Optional parameter used to determine which listener to 
+   *                      unsubscribe in the event you have listeners of the same name.
+   */
   unsubscribe: function(method, obj) {
     if(!method)
-      return this.cancelSubscriptions();
+      return this.unsubscribeAll();
     var nullified = false;  
     this.subscribers.each(function(subscriber, index) {
       if(subscriber && subscriber.isComposedOf(method, obj)) {
@@ -63,9 +76,13 @@ MICROSIS.util.CustomEvent = Class.create({
     return nullified;
   },
   
+  /**
+   * Fire the custom event's callback, passing in the scope, arguments and the custom
+   * object if it's supplied.
+   * @param arguments {Object*} Arguments passed to the callback when it's executed.
+   */
   fire: function() {    
-    var length = this.subscribers.length, 
-        args = $A(arguments), 
+    var length = this.subscribers.length, args = $A(arguments), 
         ret = true, rebuild = false;
 
     if(isNaN(length)) 
@@ -76,8 +93,7 @@ MICROSIS.util.CustomEvent = Class.create({
     
     this.subscribers.each(function(subscriber) {      
       try {
-        console.log("ARGS INTERNAL", args);
-        ret = subscriber.method.call(this.scope, args.first(), subscriber.obj);
+        ret = subscriber.method.call(this.scope,  args.first(), subscriber.obj);
       } catch(e) {
         this.lastError = e;
       }
@@ -103,22 +119,66 @@ MICROSIS.util.CustomEvent = Class.create({
   
 });
 
-MICROSIS.util.Subscriber = Class.create({
+/**
+ * @constructor
+ * @param method {Function} The method executed when the event is fired.
+ * @param obj {Object} The object to be passed along when the event fires. 
+ */
+MICROSIS.util.Subscriber = Class.create(
+  /** @scope MICROSIS.util.Subscriber.prototype */
+  {
+  
+  /**
+   * Initialize a subscriber
+   */
   initialize: function(method, obj) {
     this.method = method;
     this.obj = obj;
   },
   
+  /**
+   * Determine if a subscriber is made up of a particular method and object.
+   * @param method {Function} The method to check
+   * @param obj {Object} An optional object to check (Used when having multiple subscribers
+   *                     of the same name)
+   */
   isComposedOf: function(method, obj) {
     if(obj) return (this.method == method && this.obj == obj);
     else return (this.method == method);
   }
 });
 
+
+/**
+ * Provide event methods to mixin to classes.  These methods should be mixed into a 
+ * classes prototype using Object.extend.
+ * @class EventProvider
+ * @static
+ */
 MICROSIS.util.EventProvider = {
+  
+  /**
+   * Private member used to store custom events
+   * @property __events
+   * @type Object[]
+   * @private
+   */
   __events: null,
+  
+  /**
+   * Private member used to store custom event subscribers
+   * @property __subscribers
+   * @type Object[]
+   * @private
+   */
   __subscribers: null,
   
+  /**
+   * Subscribe to a custom event
+   * @param name {String} The name of the event to subscribe to.
+   * @param method {Function} The callback to execute when the event fires.
+   * @param obj {Object} The scope in which the callback is executed.
+   */
   subscribe: function(name, method, obj) {
     this.__events = this.__events || {};
     var customEvent = this.__events[name];
@@ -137,6 +197,16 @@ MICROSIS.util.EventProvider = {
     }
   },
   
+  /**
+   * Unsubscribe one or all listeners from an event
+   * @param name {String}     The name of the event.  If this isn't supplied, the listener
+   *                          will be removed from all active events.
+   * @param method {Function} The subscribed callback to unsubscribe.  If this 
+   *                          paramater isn't supplied, all listeners are unsubscribed.
+   * @param object {Object}   Used to determine which object to unsubscribe a listerner
+   *                          from in the event you have multiple listerns on an object's
+   *                          prototype.
+   */
   unsubscribe: function(name, method, obj) {
     this.__events = this.__events || {};
     var events = this.__events;
@@ -165,17 +235,26 @@ MICROSIS.util.EventProvider = {
     return false;
   },
   
-  cancelSubscriptions: function(name) {
+  /**
+   * Remove all listeners from the given event.  If a name isn't given, attempt to 
+   * remove all listeners from all active events.
+   * @param name {String} The name of the event to unsubscribe from.
+   */
+  unsubscribeAll: function(name) {
     return this.unsubscribe(name);
   },
   
-  createEvent: function(name, options) {
+  /**
+   * Create a new custom event.
+   * @param name {String} The name of the custom event.
+   * @param scope {Object} The execution scope.
+   */
+  createEvent: function(name, scope) {
     var events = this.__events = this.__events || {};
     var subscribers = this.__subscribers = this.__subscribers || {};
-    var opts = options || {};
     
     if(Object.isUndefined(events[name])) {
-      var scope = opts.scope || this;
+      scope = scope || this;
       var customEvent = new MICROSIS.util.CustomEvent(name, scope);
       events[name] = customEvent;
       var sub = subscribers[name];
@@ -188,11 +267,17 @@ MICROSIS.util.EventProvider = {
     return events[name];
   },
   
+  /**
+   * Fire the event specified by name, executing in the scope that was passed to 
+   * createEvent.
+   * @param name {String} The name of the event to fire.
+   * @param arguments {Object*} Arbitrary set of arguments to pass to the callback.
+   */
   fireEvent: function(name) {
-    var args = $A(arguments);
+    var args = $A(arguments), name = args.shift();
     var events = this.__events = this.__events || {};
     var customEvent = events[name];
-    if(!customEvent) return null;
+    if(Object.isUndefined(customEvent)) return null;
     
     return customEvent.fire.apply(customEvent, args);
   }

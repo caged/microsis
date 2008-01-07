@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<title>microsis_test</title>
+	<link rel="stylesheet" href="lib/unittest.css" type="text/css" media="screen" charset="utf-8" />
+	<script src="../vendor/prototype.js" type="text/javascript" charset="utf-8"></script>
+	<script src="lib/unittest.js" type="text/javascript" charset="utf-8"></script>
+	<script src="../src/microsis/microsis.js" type="text/javascript" charset="utf-8"></script>
+	<script src="../src/event/event.js" type="text/javascript" charset="utf-8"></script>
+</head>
+
+<body>
+  <!-- testlog -->
+  <div id="testlog">
+    
+  </div>
+  <!-- /testlog -->
+  <!-- test -->
+  <div id="test">
+    
+  </div>
+  <!-- /test -->
+  
+  <script type="text/javascript" charset="utf-8">
+      
+    var SportsCar = Class.create({
+      initialize: function(name) {
+        this.name = name;
+        this.tooExpensive = false;
+        
+        this.accelerateEvent        = this.createEvent("accelerateEvent");
+        this.burningRubberEvent     = this.createEvent("burningRubberEvent");
+        this.makingMeLookCoolEvent  = this.createEvent("makingMeLookCoolEvent", this);
+        this.tooDamnExpensiveEvent   = this.createEvent("tooDamnExpensiveEvent");
+        
+        this.tooDamnExpensiveEvent.subscribe(this.onTooExpensive);
+        this.accelerateEvent.subscribe(this.onAcceleration);
+        
+        if(name == "Aston Martin") {
+          this.tooDamnExpensiveEvent.fire();
+        } else {
+          this.fireEvent("accelerateEvent", {speed: 120}, "other");
+          //this.makingMeLookCoolEvent
+        }
+      },
+      
+      onAcceleration: function(opts, str) {
+        console.log(arguments);
+      },
+      
+      onTooExpensive: function(event) {
+        this.tooExpensive = true;
+        this.tooDamnExpensive.unsubscribe();
+      },
+      
+      gotMoundsOfCash: function() {
+        
+      }
+    });
+    
+    Object.extend(SportsCar.prototype, MICROSIS.util.EventProvider);
+    
+    new Test.Unit.Runner({
+      setup: function() {
+        //Global for testing purposes
+        car = new SportsCar("Aston Martin");
+        car2 = new SportsCar("Chevy Camaro");
+      },
+      
+      testShouldAugmentObjectWithEventProviderMethods: function() { with(this) {
+        assertRespondsTo("createEvent", car);
+        assertRespondsTo("fireEvent", car);
+        assertRespondsTo("subscribe", car);
+        assertRespondsTo("unsubscribe", car);
+        assertRespondsTo("unsubscribeAll", car);
+      }},
+      
+      testShouldRegisterEvents: function() { with(this) {
+        assertInstanceOf(MICROSIS.util.CustomEvent, car.accelerateEvent);
+        assertInstanceOf(MICROSIS.util.CustomEvent, car.makingMeLookCoolEvent);
+      }},
+      
+      testShouldFireInternalMethod: function() { with(this) {
+        assert(car.tooExpensive);
+      }},
+      
+      testShouldBeAbleToUnsubscribeFromEvent: function() { with(this) {
+        
+      }}
+    
+    });
+  </script>
+
+</body>
+</html>

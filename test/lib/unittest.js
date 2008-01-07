@@ -1,25 +1,38 @@
-// Copyright (c) 2005-2007 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
-//           (c) 2005-2007 Jon Tirsen (http://www.tirsen.com)
-//           (c) 2005-2007 Michael Schuerig (http://www.schuerig.de/michael/)
+// Copyright (c) 2005 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
+//           (c) 2005 Jon Tirsen (http://www.tirsen.com)
+//           (c) 2005 Michael Schuerig (http://www.schuerig.de/michael/)
 //
-// script.aculo.us is freely distributable under the terms of an MIT-style license.
-// For details, see the script.aculo.us web site: http://script.aculo.us/
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 
 // experimental, Firefox-only
 Event.simulateMouse = function(element, eventName) {
   var options = Object.extend({
     pointerX: 0,
     pointerY: 0,
-    buttons:  0,
-    ctrlKey:  false,
-    altKey:   false,
-    shiftKey: false,
-    metaKey:  false
+    buttons: 0
   }, arguments[2] || {});
   var oEvent = document.createEvent("MouseEvents");
   oEvent.initMouseEvent(eventName, true, true, document.defaultView, 
     options.buttons, options.pointerX, options.pointerY, options.pointerX, options.pointerY, 
-    options.ctrlKey, options.altKey, options.shiftKey, options.metaKey, 0, $(element));
+    false, false, false, false, 0, $(element));
   
   if(this.mark) Element.remove(this.mark);
   this.mark = document.createElement('div');
@@ -84,9 +97,10 @@ Test.Unit.Logger.prototype = {
     this.testName = testName;
     this.lastLogLine = document.createElement('tr');
     this.statusCell = document.createElement('td');
+    this.statusCell.className = "status";
     this.nameCell = document.createElement('td');
-    this.nameCell.className = "nameCell";
-    this.nameCell.appendChild(document.createTextNode(testName));
+    var humanName = testName.underscore().gsub(/_/, ' ').sub(/^test/, '').strip().capitalize();
+    this.nameCell.appendChild(document.createTextNode(humanName));
     this.messageCell = document.createElement('td');
     this.lastLogLine.appendChild(this.statusCell);
     this.lastLogLine.appendChild(this.nameCell);
@@ -98,7 +112,6 @@ Test.Unit.Logger.prototype = {
     this.lastLogLine.className = status;
     this.statusCell.innerHTML = status;
     this.messageCell.innerHTML = this._toHTML(summary);
-    this.addLinksToResults();
   },
   message: function(message) {
     if (!this.log) return;
@@ -111,7 +124,7 @@ Test.Unit.Logger.prototype = {
   _createLogTable: function() {
     this.log.innerHTML =
     '<div id="logsummary"></div>' +
-    '<table id="logtable">' +
+    '<table id="logtable" cellspacing="0" cellpadding="0">' +
     '<thead><tr><th>Status</th><th>Test</th><th>Message</th></tr></thead>' +
     '<tbody id="loglines"></tbody>' +
     '</table>';
@@ -120,16 +133,6 @@ Test.Unit.Logger.prototype = {
   },
   _toHTML: function(txt) {
     return txt.escapeHTML().replace(/\n/g,"<br/>");
-  },
-  addLinksToResults: function(){ 
-    $$("tr.failed .nameCell").each( function(td){ // todo: limit to children of this.log
-      td.title = "Run only this test"
-      Event.observe(td, 'click', function(){ window.location.search = "?tests=" + td.innerHTML;});
-    });
-    $$("tr.passed .nameCell").each( function(td){ // todo: limit to children of this.log
-      td.title = "Run all tests"
-      Event.observe(td, 'click', function(){ window.location.search = "";});
-    });
   }
 }
 
@@ -140,7 +143,6 @@ Test.Unit.Runner.prototype = {
       testLog: 'testlog'
     }, arguments[1] || {});
     this.options.resultsURL = this.parseResultsURLQueryParameter();
-    this.options.tests      = this.parseTestsQueryParameter();
     if (this.options.testLog) {
       this.options.testLog = $(this.options.testLog) || null;
     }
@@ -158,51 +160,44 @@ Test.Unit.Runner.prototype = {
         this.tests = [];
         for(var testcase in testcases) {
           if(/^test/.test(testcase)) {
-            this.tests.push(
-               new Test.Unit.Testcase(
-                 this.options.context ? ' -> ' + this.options.titles[testcase] : testcase, 
-                 testcases[testcase], testcases["setup"], testcases["teardown"]
-               ));
+            this.tests.push(new Test.Unit.Testcase(testcase, testcases[testcase], testcases["setup"], testcases["teardown"]));
           }
         }
       }
     }
     this.currentTest = 0;
     this.logger = new Test.Unit.Logger(this.options.testLog);
-    setTimeout(this.runTests.bind(this), 1000);
+    Event.observe(window, "load", function() { 
+      setTimeout(this.runTests.bind(this), 100);
+    }.bind(this));
   },
   parseResultsURLQueryParameter: function() {
     return window.location.search.parseQuery()["resultsURL"];
-  },
-  parseTestsQueryParameter: function(){
-    if (window.location.search.parseQuery()["tests"]){
-        return window.location.search.parseQuery()["tests"].split(',');
-    };
   },
   // Returns:
   //  "ERROR" if there was an error,
   //  "FAILURE" if there was a failure, or
   //  "SUCCESS" if there was neither
   getResult: function() {
-    var hasFailure = false;
-    for(var i=0;i<this.tests.length;i++) {
-      if (this.tests[i].errors > 0) {
-        return "ERROR";
-      }
-      if (this.tests[i].failures > 0) {
-        hasFailure = true;
-      }
-    }
-    if (hasFailure) {
-      return "FAILURE";
-    } else {
-      return "SUCCESS";
-    }
+    var results = {
+      tests: this.tests.length,
+      assertions: 0,
+      failures: 0,
+      errors: 0
+    };
+    
+    return this.tests.inject(results, function(results, test) {
+      results.assertions += test.assertions;
+      results.failures   += test.failures;
+      results.errors     += test.errors;
+      return results;
+    });
   },
+  
   postResults: function() {
     if (this.options.resultsURL) {
       new Ajax.Request(this.options.resultsURL, 
-        { method: 'get', parameters: 'result=' + this.getResult(), asynchronous: false });
+        { method: 'get', parameters: this.getResult(), asynchronous: false });
     }
   },
   runTests: function() {
@@ -222,27 +217,19 @@ Test.Unit.Runner.prototype = {
       setTimeout(this.runTests.bind(this), test.timeToWait || 1000);
     } else {
       this.logger.finish(test.status(), test.summary());
+      var actionButtons = test.actionButtons();
+      if (actionButtons) 
+        $(this.logger.lastLogLine).down('td', 2).appendChild(actionButtons);
+        
       this.currentTest++;
       // tail recursive, hopefully the browser will skip the stackframe
       this.runTests();
     }
   },
+  
   summary: function() {
-    var assertions = 0;
-    var failures = 0;
-    var errors = 0;
-    var messages = [];
-    for(var i=0;i<this.tests.length;i++) {
-      assertions +=   this.tests[i].assertions;
-      failures   +=   this.tests[i].failures;
-      errors     +=   this.tests[i].errors;
-    }
-    return (
-      (this.options.context ? this.options.context + ': ': '') + 
-      this.tests.length + " tests, " + 
-      assertions + " assertions, " + 
-      failures   + " failures, " +
-      errors     + " errors");
+    return '#{tests} tests, #{assertions} assertions, #{failures} failures, #{errors} errors'
+      .interpolate(this.getResult());
   }
 }
 
@@ -253,6 +240,7 @@ Test.Unit.Assertions.prototype = {
     this.failures   = 0;
     this.errors     = 0;
     this.messages   = [];
+    this.actions    = {};
   },
   summary: function() {
     return (
@@ -261,25 +249,51 @@ Test.Unit.Assertions.prototype = {
       this.errors     + " errors" + "\n" +
       this.messages.join("\n"));
   },
+  actionButtons: function() {
+    if (!Object.keys(this.actions).any()) return false;
+    var div = $(document.createElement("div"));
+    div.addClassName("action_buttons");
+  
+    for (var title in this.actions) {
+      var button = $(document.createElement("input"));
+      button.value = title;
+      button.type = "button";
+      button.observe("click", this.actions[title]);
+      div.appendChild(button);
+    }
+    return div;
+  },
   pass: function() {
     this.assertions++;
   },
   fail: function(message) {
     this.failures++;
-    this.messages.push("Failure: " + message);
+
+    var line = "";
+    try {
+      throw new Error("stack");
+    } catch(e){
+      line = (/\.html:(\d+)/.exec(e.stack || '') || ['',''])[1];
+    }
+
+    this.messages.push("Failure: " + message + (line ? " Line #" + line : ""));
   },
   info: function(message) {
     this.messages.push("Info: " + message);
   },
-  error: function(error) {
+  error: function(error, test) {
     this.errors++;
-    this.messages.push(error.name + ": "+ error.message + "(" + Test.Unit.inspect(error) +")");
+    this.actions['retry with throw'] = function() { test.run(true) };
+    this.messages.push(error.name + ": "+ error.message + "(" + Test.Unit.inspect(error) + ")");
   },
   status: function() {
     if (this.failures > 0) return 'failed';
     if (this.errors > 0) return 'error';
     return 'passed';
   },
+  isRunningFromRake: (function() {
+    return window.location.port == 4711;
+  })(),
   assert: function(expression) {
     var message = arguments[1] || 'assert: got "' + Test.Unit.inspect(expression) + '"';
     try { expression ? this.pass() : 
@@ -293,25 +307,60 @@ Test.Unit.Assertions.prototype = {
         '", actual "' + Test.Unit.inspect(actual) + '"'); }
     catch(e) { this.error(e); }
   },
-  assertInspect: function(expected, actual) {
-    var message = arguments[2] || "assertInspect";
-    try { (expected == actual.inspect()) ? this.pass() :
-      this.fail(message + ': expected "' + Test.Unit.inspect(expected) + 
-        '", actual "' + Test.Unit.inspect(actual) + '"'); }
+  assertNotEqual: function(expected, actual) {
+    var message = arguments[2] || "assertNotEqual";
+    try { (expected != actual) ? this.pass() : 
+      this.fail(message + ': got "' + Test.Unit.inspect(actual) + '"'); }
     catch(e) { this.error(e); }
   },
   assertEnumEqual: function(expected, actual) {
     var message = arguments[2] || "assertEnumEqual";
-    try { $A(expected).length == $A(actual).length && 
+    expected = $A(expected);
+    actual = $A(actual);
+    try { expected.length == actual.length && 
       expected.zip(actual).all(function(pair) { return pair[0] == pair[1] }) ?
         this.pass() : this.fail(message + ': expected ' + Test.Unit.inspect(expected) + 
           ', actual ' + Test.Unit.inspect(actual)); }
     catch(e) { this.error(e); }
   },
-  assertNotEqual: function(expected, actual) {
-    var message = arguments[2] || "assertNotEqual";
-    try { (expected != actual) ? this.pass() : 
-      this.fail(message + ': got "' + Test.Unit.inspect(actual) + '"'); }
+  assertEnumNotEqual: function(expected, actual) {
+    var message = arguments[2] || "assertEnumEqual";
+    expected = $A(expected);
+    actual = $A(actual);
+    try { expected.length != actual.length || 
+      expected.zip(actual).any(function(pair) { return pair[0] != pair[1] }) ?
+        this.pass() : this.fail(message + ': ' + Test.Unit.inspect(expected) + 
+          ' was the same as ' + Test.Unit.inspect(actual)); }
+    catch(e) { this.error(e); }
+  },
+  assertHashEqual: function(expected, actual) {
+    var message = arguments[2] || "assertHashEqual";
+    expected = $H(expected);
+    actual = $H(actual);
+    var expected_array = expected.toArray().sort(), actual_array = actual.toArray().sort();
+    // from now we recursively zip & compare nested arrays
+    try { expected_array.length == actual_array.length && 
+      expected_array.zip(actual_array).all(function(pair) {
+        return pair.all(function(i){ return i && i.constructor == Array }) ?
+          pair[0].zip(pair[1]).all(arguments.callee) : pair[0] == pair[1];
+      }) ?
+        this.pass() : this.fail(message + ': expected ' + Test.Unit.inspect(expected) + 
+          ', actual ' + Test.Unit.inspect(actual)); }
+    catch(e) { this.error(e); }
+  },
+  assertHashNotEqual: function(expected, actual) {
+    var message = arguments[2] || "assertHashEqual";
+    expected = $H(expected);
+    actual = $H(actual);
+    var expected_array = expected.toArray().sort(), actual_array = actual.toArray().sort();
+    // from now we recursively zip & compare nested arrays
+    try { !(expected_array.length == actual_array.length && 
+      expected_array.zip(actual_array).all(function(pair) {
+        return pair.all(function(i){ return i && i.constructor == Array }) ?
+          pair[0].zip(pair[1]).all(arguments.callee) : pair[0] == pair[1];
+      })) ?
+        this.pass() : this.fail(message + ': ' + Test.Unit.inspect(expected) + 
+          ' was the same as ' + Test.Unit.inspect(actual)); }
     catch(e) { this.error(e); }
   },
   assertIdentical: function(expected, actual) { 
@@ -330,40 +379,57 @@ Test.Unit.Assertions.prototype = {
   },
   assertNull: function(obj) {
     var message = arguments[1] || 'assertNull'
-    try { (obj==null) ? this.pass() : 
+    try { (obj===null) ? this.pass() : 
+     this.fail(message + ': got "' + Test.Unit.inspect(obj) + '"'); }
+    catch(e) { this.error(e); }
+  },
+  assertNotNull: function(obj) {
+    var message = arguments[1] || 'assertNotNull'
+    try { (obj!==null) ? this.pass() : 
+     this.fail(message + ': got "' + Test.Unit.inspect(obj) + '"'); }
+    catch(e) { this.error(e); }
+  },
+  assertUndefined: function(obj) {
+    var message = arguments[1] || 'assertUndefined'
+    try { (typeof obj=="undefined") ? this.pass() :
+      this.fail(message + ': got "' + Test.Unit.inspect(obj) + '"'); }
+    catch(e) { this.error(e); }
+  },
+  assertNotUndefined: function(obj) {
+    var message = arguments[1] || 'assertNotUndefined'
+    try { (typeof obj != "undefined") ? this.pass() :
+      this.fail(message + ': got "' + Test.Unit.inspect(obj) + '"'); }
+    catch(e) { this.error(e); }
+  },
+  assertNullOrUndefined: function(obj){
+    var message = arguments[1] || 'assertNullOrUndefined'
+    try { (obj==null) ? this.pass() :
+      this.fail(message + ': got "' + Test.Unit.inspect(obj) + '"'); }
+    catch(e) { this.error(e); }
+  },
+  assertNotNullOrUndefined: function(obj){
+    var message = arguments[1] || 'assertNotNullOrUndefined'
+    try { (obj!=null) ? this.pass() :
       this.fail(message + ': got "' + Test.Unit.inspect(obj) + '"'); }
     catch(e) { this.error(e); }
   },
   assertMatch: function(expected, actual) {
     var message = arguments[2] || 'assertMatch';
     var regex = new RegExp(expected);
-    try { (regex.exec(actual)) ? this.pass() :
+    try { regex.exec(actual) ? this.pass() :
       this.fail(message + ' : regex: "' +  Test.Unit.inspect(expected) + ' did not match: ' + Test.Unit.inspect(actual) + '"'); }
+    catch(e) { this.error(e); }
+  },
+  assertNoMatch: function(expected, actual) {
+    var message = arguments[2] || 'assertMatch';
+    var regex = new RegExp(expected);
+    try { !regex.exec(actual) ? this.pass() :
+      this.fail(message + ' : regex: "' +  Test.Unit.inspect(expected) + ' matched: ' + Test.Unit.inspect(actual) + '"'); }
     catch(e) { this.error(e); }
   },
   assertHidden: function(element) {
     var message = arguments[1] || 'assertHidden';
     this.assertEqual("none", element.style.display, message);
-  },
-  assertNotNull: function(object) {
-    var message = arguments[1] || 'assertNotNull';
-    this.assert(object != null, message);
-  },
-  assertType: function(expected, actual) {
-    var message = arguments[2] || 'assertType';
-    try { 
-      (actual.constructor == expected) ? this.pass() : 
-      this.fail(message + ': expected "' + Test.Unit.inspect(expected) +  
-        '", actual "' + (actual.constructor) + '"'); }
-    catch(e) { this.error(e); }
-  },
-  assertNotOfType: function(expected, actual) {
-    var message = arguments[2] || 'assertNotOfType';
-    try { 
-      (actual.constructor != expected) ? this.pass() : 
-      this.fail(message + ': expected "' + Test.Unit.inspect(expected) +  
-        '", actual "' + (actual.constructor) + '"'); }
-    catch(e) { this.error(e); }
   },
   assertInstanceOf: function(expected, actual) {
     var message = arguments[2] || 'assertInstanceOf';
@@ -386,37 +452,43 @@ Test.Unit.Assertions.prototype = {
       this.fail(message + ": object doesn't respond to [" + method + "]"); }
     catch(e) { this.error(e); }
   },
-  assertReturnsTrue: function(method, obj) {
-    var message = arguments[2] || 'assertReturnsTrue';
-    try {
-      var m = obj[method];
-      if(!m) m = obj['is'+method.charAt(0).toUpperCase()+method.slice(1)];
-      m() ? this.pass() : 
-      this.fail(message + ": method returned false"); }
-    catch(e) { this.error(e); }
-  },
-  assertReturnsFalse: function(method, obj) {
-    var message = arguments[2] || 'assertReturnsFalse';
-    try {
-      var m = obj[method];
-      if(!m) m = obj['is'+method.charAt(0).toUpperCase()+method.slice(1)];
-      !m() ? this.pass() : 
-      this.fail(message + ": method returned true"); }
-    catch(e) { this.error(e); }
-  },
   assertRaise: function(exceptionName, method) {
     var message = arguments[2] || 'assertRaise';
     try { 
       method();
       this.fail(message + ": exception expected but none was raised"); }
     catch(e) {
-      ((exceptionName == null) || (e.name==exceptionName)) ? this.pass() : this.error(e); 
+      (e.name==exceptionName) ? this.pass() : this.error(e); 
     }
+  },
+  assertNothingRaised: function(method) {
+    var message = arguments[1] || 'assertNothingRaised';
+    try {
+      method();
+      this.pass();
+    } catch (e) {
+      this.fail(message + ": " + e.toString());
+    }
+  },
+  _isVisible: function(element) {
+    element = $(element);
+    if(!element.parentNode) return true;
+    this.assertNotNull(element);
+    if(element.style && Element.getStyle(element, 'display') == 'none')
+      return false;
+    
+    return this._isVisible(element.parentNode);
+  },
+  assertNotVisible: function(element) {
+    this.assert(!this._isVisible(element), Test.Unit.inspect(element) + " was not hidden and didn't have a hidden parent either. " + ("" || arguments[1]));
+  },
+  assertVisible: function(element) {
+    this.assert(this._isVisible(element), Test.Unit.inspect(element) + " was not visible. " + ("" || arguments[1]));
   },
   assertElementsMatch: function() {
     var expressions = $A(arguments), elements = $A(expressions.shift());
     if (elements.length != expressions.length) {
-      this.fail('assertElementsMatch: size mismatch: ' + elements.length + ' elements, ' + expressions.length + ' expressions');
+      this.fail('assertElementsMatch: size mismatch: ' + elements.length + ' elements, ' + expressions.length + ' expressions (' + expressions.inspect() + ')');
       return false;
     }
     elements.zip(expressions).all(function(pair, index) {
@@ -435,29 +507,6 @@ Test.Unit.Assertions.prototype = {
     this.info((arguments[2] || 'Operation') + ' finished ' + 
        iterations + ' iterations in ' + (timeTaken/1000)+'s' );
     return timeTaken;
-  },
-  _isVisible: function(element) {
-    element = $(element);
-    if(!element.parentNode) return true;
-    this.assertNotNull(element);
-    if(element.style && Element.getStyle(element, 'display') == 'none')
-      return false;
-    
-    return this._isVisible(element.parentNode);
-  },
-  assertNotVisible: function(element) {
-    this.assert(!this._isVisible(element), Test.Unit.inspect(element) + " was not hidden and didn't have a hidden parent either. " + ("" || arguments[1]));
-  },
-  assertVisible: function(element) {
-    this.assert(this._isVisible(element), Test.Unit.inspect(element) + " was not visible. " + ("" || arguments[1]));
-  },
-  benchmark: function(operation, iterations) {
-    var startAt = new Date();
-    (iterations || 1).times(operation);
-    var timeTaken = ((new Date())-startAt);
-    this.info((arguments[2] || 'Operation') + ' finished ' + 
-       iterations + ' iterations in ' + (timeTaken/1000)+'s' );
-    return timeTaken;
   }
 }
 
@@ -466,17 +515,7 @@ Object.extend(Object.extend(Test.Unit.Testcase.prototype, Test.Unit.Assertions.p
   initialize: function(name, test, setup, teardown) {
     Test.Unit.Assertions.prototype.initialize.bind(this)();
     this.name           = name;
-    
-    if(typeof test == 'string') {
-      test = test.gsub(/(\.should[^\(]+\()/,'#{0}this,');
-      test = test.gsub(/(\.should[^\(]+)\(this,\)/,'#{1}(this)');
-      this.test = function() {
-        eval('with(this){'+test+'}');
-      }
-    } else {
-      this.test = test || function() {};
-    }
-    
+    this.test           = test || function() {};
     this.setup          = setup || function() {};
     this.teardown       = teardown || function() {};
     this.isWaiting      = false;
@@ -487,7 +526,7 @@ Object.extend(Object.extend(Test.Unit.Testcase.prototype, Test.Unit.Assertions.p
     this.test = nextPart;
     this.timeToWait = time;
   },
-  run: function() {
+  run: function(rethrow) {
     try {
       try {
         if (!this.isWaiting) this.setup.bind(this)();
@@ -499,68 +538,9 @@ Object.extend(Object.extend(Test.Unit.Testcase.prototype, Test.Unit.Assertions.p
         }
       }
     }
-    catch(e) { this.error(e); }
-  }
-});
-
-// *EXPERIMENTAL* BDD-style testing to please non-technical folk
-// This draws many ideas from RSpec http://rspec.rubyforge.org/
-
-Test.setupBDDExtensionMethods = function(){
-  var METHODMAP = {
-    shouldEqual:     'assertEqual',
-    shouldNotEqual:  'assertNotEqual',
-    shouldEqualEnum: 'assertEnumEqual',
-    shouldBeA:       'assertType',
-    shouldNotBeA:    'assertNotOfType',
-    shouldBeAn:      'assertType',
-    shouldNotBeAn:   'assertNotOfType',
-    shouldBeNull:    'assertNull',
-    shouldNotBeNull: 'assertNotNull',
-    
-    shouldBe:        'assertReturnsTrue',
-    shouldNotBe:     'assertReturnsFalse',
-    shouldRespondTo: 'assertRespondsTo'
-  };
-  var makeAssertion = function(assertion, args, object) { 
-   	this[assertion].apply(this,(args || []).concat([object]));
-  }
-  
-  Test.BDDMethods = {};   
-  $H(METHODMAP).each(function(pair) { 
-    Test.BDDMethods[pair.key] = function() { 
-       var args = $A(arguments); 
-       var scope = args.shift(); 
-       makeAssertion.apply(scope, [pair.value, args, this]); }; 
-  });
-  
-  [Array.prototype, String.prototype, Number.prototype, Boolean.prototype].each(
-    function(p){ Object.extend(p, Test.BDDMethods) }
-  );
-}
-
-Test.context = function(name, spec, log){
-  Test.setupBDDExtensionMethods();
-  
-  var compiledSpec = {};
-  var titles = {};
-  for(specName in spec) {
-    switch(specName){
-      case "setup":
-      case "teardown":
-        compiledSpec[specName] = spec[specName];
-        break;
-      default:
-        var testName = 'test'+specName.gsub(/\s+/,'-').camelize();
-        var body = spec[specName].toString().split('\n').slice(1);
-        if(/^\{/.test(body[0])) body = body.slice(1);
-        body.pop();
-        body = body.map(function(statement){ 
-          return statement.strip()
-        });
-        compiledSpec[testName] = body.join('\n');
-        titles[testName] = specName;
+    catch(e) { 
+      if (rethrow) throw e;
+      this.error(e, this); 
     }
   }
-  new Test.Unit.Runner(compiledSpec, { titles: titles, testLog: log || 'testlog', context: name });
-};
+});

@@ -23,6 +23,7 @@ See http://www.perl.com/perl/misc/Artistic.html
 </pre>
  * @static
  */
+ 
 Dumper = {
 	/** @param [...] The objects to dump. */
 	dump: function () {

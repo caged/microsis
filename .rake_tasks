@@ -1,4 +1,5 @@
-microsis:build
-microsis:compress
-microsis:doc:api
-microsis:doc:convention
+build
+compress
+doc:api
+doc:convention
+doc:doctor

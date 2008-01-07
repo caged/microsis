@@ -24,27 +24,23 @@
   <!-- /test -->
   
   <script type="text/javascript" charset="utf-8">
-    Test.context("BDD-style testing",{
-      setup: function() {
-
-      },
-      
-      "should define objects when using namespace": function() {
+    new Test.Unit.Runner({
+      testDefiningObjectsUsingNamespace: function() { with(this) {
         MICROSIS.namespace('utils.foo.bar');
         MICROSIS.namespace('aaa', 'bbb', 'ccc')
-        assert(typeof MICROSIS.utils.foo.bar != "undefined");
-        assert(typeof MICROSIS.aaa != "undefined");
+        assertNotUndefined(MICROSIS.utils.foo.bar);
+        assertNotUndefined(MICROSIS.aaa);
         //assert(typeof MICROSIS.bbb != "undefined");
         //assert(typeof MICROSIS.ccc != "undefined");
-      },
+      }},
       
-      "should exclude MICROSIS from appearing in a namespace twice": function() {
+      testShouldExcludeMicrosisFromAppearingInNamespaceTwice: function() { with(this) {
         MICROSIS.namespace('MICROSIS.foo.bar');
         MICROSIS.namespace('microsis.fiddly.foo');
-        assert(typeof MICROSIS.MICROSIS == "undefined");
-        assert(typeof MICROSIS.foo.bar  != "undefined");
-        assert(typeof MICROSIS.microsis != "undefined");
-      }
+        assertUndefined(MICROSIS.MICROSIS);
+        assertNotUndefined(MICROSIS.foo.bar);
+        assertNotUndefined(MICROSIS.microsis);
+      }}
     });
   </script>
 
