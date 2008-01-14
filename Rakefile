@@ -51,6 +51,7 @@ namespace :doc do
 
   desc "Generate Convention documents from source files"
   task :convention do
+    # making a change
     Microsis::DocBuilder.build_convention_docs
   end
 end
