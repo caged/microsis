@@ -9,7 +9,7 @@
  * Some components are derived from and/or ported from YUI's on implementation.
  */
  
-if(typeof MICROSIS == "undefined" || !MICROSIS) {
+if(Object.isUndefined(MICROSIS)) {
   /**
    * MICROSIS is the module in which all classes, widgets and methods are contained.
    * At the moment I'm using JSDoc to document the code.

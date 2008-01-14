@@ -30,30 +30,37 @@
       initialize: function(name) {
         this.name = name;
         this.tooExpensive = false;
+        this.lookingCool  = false;
         
-        this.accelerateEvent        = this.createEvent("accelerateEvent");
-        this.burningRubberEvent     = this.createEvent("burningRubberEvent");
-        this.makingMeLookCoolEvent  = this.createEvent("makingMeLookCoolEvent", this);
-        this.tooDamnExpensiveEvent   = this.createEvent("tooDamnExpensiveEvent");
+        this.createEvent("accelerateEvent");
+        this.createEvent("burningRubberEvent");
+        this.createEvent("makingMeLookCoolEvent", this);
+        this.createEvent("tooDamnExpensiveEvent");
         
-        this.tooDamnExpensiveEvent.subscribe(this.onTooExpensive);
-        this.accelerateEvent.subscribe(this.onAcceleration);
+        this.subscribe("tooDamnExpensiveEvent", this.onTooExpensive);
+        this.subscribe("makingMeLookCoolEvent", this.onLookingCool);
+        this.subscribe("accelerateEvent", this.onAcceleration);
         
         if(name == "Aston Martin") {
-          this.tooDamnExpensiveEvent.fire();
+          this.unsubscribe("makingMeLookCoolEvent");
+          this.fireEvent("tooDamnExpensiveEvent");
         } else {
           this.fireEvent("accelerateEvent", {speed: 120}, "other");
           //this.makingMeLookCoolEvent
         }
       },
       
-      onAcceleration: function(opts, str) {
-        console.log(arguments);
+      onLookingCool: function(memo, obj) {
+        this.lookingCool = true;
       },
       
-      onTooExpensive: function(event) {
+      onAcceleration: function(memo, str) {
+        
+      },
+      
+      onTooExpensive: function(memo) {
         this.tooExpensive = true;
-        this.tooDamnExpensive.unsubscribe();
+        this.unsubscribe("tooDamnExpensive");
       },
       
       gotMoundsOfCash: function() {
@@ -63,11 +70,52 @@
     
     Object.extend(SportsCar.prototype, MICROSIS.util.EventProvider);
     
+    
+    
+    var A = Class.create({
+      initialize: function() {
+        this.eventFired = false;
+        this.anotherEventFired = false;
+        
+        this.createEvent("anEvent");
+        this.subscribe("anEvent", this.someCallback);
+        this.fireEvent("anEvent");
+        
+        this.anotherEvent = this.createEvent("anotherEvent", this);
+      },
+      
+      onAnotherEvent: function() {
+        this.anotherEventFired = true;
+      },
+      
+      someCallback: function() {
+       this.eventFired = true; 
+      }
+    });
+    
+    var B = Class.create(A, {
+      initialize: function($super) {
+        this.subclassEventFired = false;
+        $super();
+      },
+      
+      someCallback: function() {
+        this.subclassEventFired = true;
+      }
+    });
+    
+    Object.extend(A.prototype, MICROSIS.util.EventProvider);
+    
+    
     new Test.Unit.Runner({
       setup: function() {
         //Global for testing purposes
         car = new SportsCar("Aston Martin");
         car2 = new SportsCar("Chevy Camaro");
+      },
+      
+      teardown: function() {
+        car = null, car2 = null;
       },
       
       testShouldAugmentObjectWithEventProviderMethods: function() { with(this) {
@@ -79,8 +127,8 @@
       }},
       
       testShouldRegisterEvents: function() { with(this) {
-        assertInstanceOf(MICROSIS.util.CustomEvent, car.accelerateEvent);
-        assertInstanceOf(MICROSIS.util.CustomEvent, car.makingMeLookCoolEvent);
+        assertInstanceOf(MICROSIS.util.CustomEvent, car.__events.accelerateEvent);
+        assertInstanceOf(MICROSIS.util.CustomEvent, car.__events.makingMeLookCoolEvent);
       }},
       
       testShouldFireInternalMethod: function() { with(this) {
@@ -88,6 +136,52 @@
       }},
       
       testShouldBeAbleToUnsubscribeFromEvent: function() { with(this) {
+        assertIdentical(car.lookingCool, false);
+        
+        var eventFired = false;
+        var cEvent = new MICROSIS.util.CustomEvent("testingEvent");
+        cEvent.subscribe(function() { eventFired = true; });
+        cEvent.fire();
+        assert(eventFired);
+        
+        eventFired = false;
+        cEvent.unsubscribe();
+        cEvent.fire();
+        assertIdentical(eventFired, false);
+      }},
+      
+      testShouldBeAbleToUnsubscribeFromNamedFunction: function() { with(this) {
+        var eventFired = false, event2Fired = false;
+        var cEvent = new MICROSIS.util.CustomEvent("someEvent");
+        var callbackA = function() { eventFired = true; }
+        var callbackB = function() { event2Fired = true; }
+        
+        cEvent.subscribe(callbackA);
+        cEvent.subscribe(callbackB);
+        cEvent.fire();
+        
+        assert(eventFired);
+        assert(event2Fired);
+        
+        eventFired = false, event2Fired = false;
+        cEvent.unsubscribe(callbackA);
+        cEvent.fire();
+        assertIdentical(eventFired, false);
+        assert(event2Fired);
+        
+      }},
+      
+      testShouldInheritEventFromParent: function() { with(this) {
+        var b = new B();
+        assertInstanceOf(MICROSIS.util.CustomEvent, b.anotherEvent);
+      }},
+      
+      testShouldFireEventsForSubclassesWhenInheriting: function() { with(this) {        
+        var a = new A();
+        var b = new B();
+        
+        assert(a.eventFired);
+        assert(b.subclassEventFired);
         
       }}
     

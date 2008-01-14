@@ -10,24 +10,25 @@ $:.unshift(File.expand_path(File.dirname(__FILE__)))
 end
 
 require 'doc_builder'
-require 'doctor/doctor'
 
 YUI_COMPRESSOR_BIN = "java -jar vendor/yuicompressor/build/yuicompressor-2.2.4.jar --warn"
 JAVASCRIPT_SOURCE_FILES = Dir["src/**/*.js"]
 
-desc "Build and compress from source"
+desc "Create builds from source"
 task :build do
   JAVASCRIPT_SOURCE_FILES.each do |f|
     path = Pathname.new(f)
     component = path.parent.basename
     mkdir("build/#{component}") unless (File.exists?("build/#{component}"))
-    cp "#{path}", "build/#{component}"
+    cp path, File.join('build', component)
   end
 end
 
 desc "Compress build files using YUI Compressor"
 task :compress => :build do
-  Dir["build/**/*[^-min].js"].each do |f|
+  js_files = Dir["build/**/*.js"].select {|f| !File.basename(f).include?('min')}
+  js_files.sort_by {|x| File.basename(x) }.each do |f|
+    puts "COMPRESSING: #{File.basename(f)}"
     path = Pathname.new(f)
     basename = path.basename(f).sub(/\.js$/, '')
     compressed_name = path.parent + "#{basename}-min.js"
@@ -36,7 +37,7 @@ task :compress => :build do
 end
 
 namespace :doc do
-  desc "Document all Microsis Javascript"
+  desc "Create API documentation for all Microsis JavaScript source files"
   task :api => :build do 
     dir = File.expand_path(File.dirname(__FILE__))
     rm Dir["docs/api/*"] 
@@ -46,7 +47,6 @@ namespace :doc do
     sunny_template = File.join(jsdoc_dir, 'templates', 'sunny')
     command = "java -Djsdoc.dir=#{jsdoc_dir} -jar  #{jsdoc_dir}/app/js.jar #{jsdoc_dir}/app/run.js -t=#{sunny_template} -r=3 -d=#{File.join(dir, 'docs', 'api')} #{File.join(dir, 'src')}"
     puts "RUNNING: #{command}"
-    puts  `#{command}`
   end
 
   desc "Generate Convention documents from source files"

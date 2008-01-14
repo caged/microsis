@@ -36,11 +36,22 @@ MICROSIS.util.CustomEvent = Class.create(
      * The context in which the custom event is invoked from.  Defaults to the window
      * object.
      * @property scope
-     * @type object
+     * @type {Object}
      */
     this.scope = scope || window;
     
+    /**
+     * An array of subscribers
+     * @property subscribers
+     * @type {Array}
+     */
     this.subscribers = [];
+    
+    /**
+     * The last error thrown when trying to invoke a callback
+     * @property lastError
+     * @type {String}
+     */
     this.lastError = null;
   },
   
@@ -103,7 +114,8 @@ MICROSIS.util.CustomEvent = Class.create(
         
     }.bind(this));
     
-    if(rebuild) this.subscribers = this.subscribers.compact();
+    if(rebuild) 
+      this.subscribers = this.subscribers.compact();
       
     return true
   },

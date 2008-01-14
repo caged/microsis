@@ -5,7 +5,7 @@
  */
  
 /**
-  * The CustomEvent object allows you to create and subscribe to interesting 
+  * @fileOverview The CustomEvent object allows you to create and subscribe to interesting 
   * moments within your code.  You can define events in one object and any number 
   * of different objects can subscribe to the event, including the object the event 
   * was created in.
@@ -36,11 +36,22 @@ MICROSIS.util.CustomEvent = Class.create(
      * The context in which the custom event is invoked from.  Defaults to the window
      * object.
      * @property scope
-     * @type object
+     * @type {Object}
      */
     this.scope = scope || window;
     
+    /**
+     * An array of subscribers
+     * @property subscribers
+     * @type {Array}
+     */
     this.subscribers = [];
+    
+    /**
+     * The last error thrown when trying to invoke a callback
+     * @property lastError
+     * @type {String}
+     */
     this.lastError = null;
   },
   
@@ -76,6 +87,17 @@ MICROSIS.util.CustomEvent = Class.create(
     return nullified;
   },
   
+  unsubscribeAll: function() {
+    var i = 0;
+    this.subscribers.each(function(sub, index) {
+        this._unset(index)
+        i = index;
+    }.bind(this));
+    
+    this.subscribers = [];
+    return i;
+  },
+  
   /**
    * Fire the custom event's callback, passing in the scope, arguments and the custom
    * object if it's supplied.
@@ -103,7 +125,8 @@ MICROSIS.util.CustomEvent = Class.create(
         
     }.bind(this));
     
-    if(rebuild) this.subscribers = this.subscribers.compact();
+    if(rebuild) 
+      this.subscribers = this.subscribers.compact();
       
     return true
   },

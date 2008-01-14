@@ -2,4 +2,3 @@ build
 compress
 doc:api
 doc:convention
-doc:doctor
