@@ -44,9 +44,11 @@ namespace :doc do
     vendor_dir = File.join(dir, 'vendor')
     jsdoc_dir = File.expand_path(File.join(vendor_dir, 'jsdoc'))
     microsis_template = "#{File.join(dir, 'lib', 'templates', 'microsis')}"
-    sunny_template = File.join(jsdoc_dir, 'templates', 'sunny')
-    command = "java -Djsdoc.dir=#{jsdoc_dir} -jar  #{jsdoc_dir}/app/js.jar #{jsdoc_dir}/app/run.js -t=#{sunny_template} -r=3 -d=#{File.join(dir, 'docs', 'api')} #{File.join(dir, 'src')}"
+    jsdoc_template = File.join('templates', 'jsdoc')
+    cd jsdoc_dir
+    command = "java -jar  jsrun.jar app/run.js -t=#{jsdoc_template} -r=3 -d=#{File.join(dir, 'docs', 'api')} ../../src"
     puts "RUNNING: #{command}"
+    puts `#{command}`
   end
 
   desc "Generate Convention documents from source files"

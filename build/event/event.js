@@ -5,7 +5,7 @@
  */
  
 /**
-  * The CustomEvent object allows you to create and subscribe to interesting 
+  * @fileOverview The CustomEvent object allows you to create and subscribe to interesting 
   * moments within your code.  You can define events in one object and any number 
   * of different objects can subscribe to the event, including the object the event 
   * was created in.
@@ -85,6 +85,17 @@ MICROSIS.util.CustomEvent = Class.create(
       }
     }.bind(this));
     return nullified;
+  },
+  
+  unsubscribeAll: function() {
+    var i = 0;
+    this.subscribers.each(function(sub, index) {
+        this._unset(index)
+        i = index;
+    }.bind(this));
+    
+    this.subscribers = [];
+    return i;
   },
   
   /**
