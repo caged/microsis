@@ -1,4 +1,4 @@
-
+#test
 require 'rake'
 require 'rake/packagetask'
 require 'fileutils'
